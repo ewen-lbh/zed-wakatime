@@ -26,7 +26,7 @@ impl WakatimeExtension {
         );
         
         // Waiting on https://github.com/mrnossiom/wakatime-lsp/issues/2
-        todo!();
+        unimplemented!("Use installation instructions on https://github.com/mrnossiom/wakatime-lsp");
         
         let release = zed::latest_github_release(
             "mrnossiom/wakatime-lsp",
