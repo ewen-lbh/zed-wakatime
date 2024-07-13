@@ -60,7 +60,7 @@ impl WakatimeExtension {
             .ok_or_else(|| format!("no asset found matching {:?}", asset_name))?;
 
         let version_dir = format!("wakatime-lsp-{}", release.version);
-        let asset_name = asset_name.split('.').next().unwrap();
+        let asset_name = asset_name.split('.').next().expect("failed to split asset name");
         let binary_path: String = format!("{version_dir}/{asset_name}/wakatime-lsp");
 
         if !fs::metadata(&binary_path).map_or(false, |stat| stat.is_file()) {
@@ -79,7 +79,7 @@ impl WakatimeExtension {
             )
             .map_err(|e| format!("failed to download file: {e}"))?;
 
-            zed::make_file_executable(&binary_path)?;
+            zed::make_file_executable(&binary_path).expect("failed to make file executable");
 
             let entries =
                 fs::read_dir(".").map_err(|e| format!("failed to list working directory {e}"))?;
@@ -108,10 +108,8 @@ impl zed::Extension for WakatimeExtension {
         language_server_id: &zed::LanguageServerId,
         worktree: &zed::Worktree,
     ) -> zed::Result<zed::Command> {
-        let wakatime_language_server_binary_path =
-            self.language_server_binary_path(language_server_id, worktree)?;
         Ok(zed::Command {
-            command: wakatime_language_server_binary_path,
+            command: self.language_server_binary_path(language_server_id, worktree)?,
             args: vec![],
             env: vec![],
         })
