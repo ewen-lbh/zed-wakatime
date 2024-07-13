@@ -39,8 +39,8 @@ impl WakatimeExtension {
             "wakatime-lsp-{arch}-{os}.{extension}",
             arch = match arch {
                 zed::Architecture::Aarch64 => "aarch64",
-                zed::Architecture::X86 => "i386",
                 zed::Architecture::X8664 => "x86_64",
+                _ => return Err(format!("unsupported architecture: {:?}", arch)),
             },
             os = match platform {
                 zed::Os::Mac => "apple-darwin",
