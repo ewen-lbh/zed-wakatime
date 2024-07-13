@@ -1,13 +1,5 @@
-use std::fs::{self, OpenOptions};
-// use std::io::{prelude::*};
-
-use zed_extension_api::{self as zed, LanguageServerId, Result};
-
-fn log(msg: String) {
-    println!("{}", msg);
-    // let mut logfile = OpenOptions::new().write(true).append(true).open("/home/uwun/projects.local/zed-wakatime/ext.log").unwrap();
-    // writeln!(logfile, "{}", msg).unwrap();
-}
+use std::fs;
+use zed_extension_api::{self as zed};
 
 struct WakatimeExtension {
     cached_binary_path: Option<String>,
@@ -16,13 +8,10 @@ struct WakatimeExtension {
 impl WakatimeExtension {
     fn language_server_binary_path(
         &mut self,
-        language_server_id: &LanguageServerId,
+        language_server_id: &zed::LanguageServerId,
         worktree: &zed::Worktree,
-    ) -> Result<String> {
-        log(format!("searching for wakatime-lsp"));
+    ) -> zed::Result<String> {
         if let Some(path) = worktree.which("wakatime-lsp") {
-            // !("found wakatime-lsp at {:?}", path);
-            // write the above line to the logfile at ~/projects.local/zed-wakatime/ext.log
             return Ok(path);
         }
 
@@ -34,14 +23,9 @@ impl WakatimeExtension {
 
         zed::set_language_server_installation_status(
             &language_server_id,
-            &zed::LanguageServerInstallationStatus::CheckingForUpdate,
+            &zed_extension_api::LanguageServerInstallationStatus::CheckingForUpdate,
         );
-
-        // Waiting on https://github.com/mrnossiom/wakatime-lsp/issues/2
-        unimplemented!(
-            "Use installation instructions on https://github.com/mrnossiom/wakatime-lsp"
-        );
-
+        
         let release = zed::latest_github_release(
             "mrnossiom/wakatime-lsp",
             zed::GithubReleaseOptions {
@@ -52,10 +36,10 @@ impl WakatimeExtension {
 
         let (platform, arch) = zed::current_platform();
         let asset_name = format!(
-            "wakatime-lsp-{arch}-{os}.tar.gz",
+            "wakatime-lsp-{arch}-{os}.{extension}",
             arch = match arch {
                 zed::Architecture::Aarch64 => "aarch64",
-                zed::Architecture::X86 => "x86",
+                zed::Architecture::X86 => "i386",
                 zed::Architecture::X8664 => "x86_64",
             },
             os = match platform {
@@ -63,6 +47,10 @@ impl WakatimeExtension {
                 zed::Os::Linux => "unknown-linux-gnu",
                 zed::Os::Windows => "pc-windows-msvc",
             },
+            extension = match platform {
+                zed::Os::Mac | zed::Os::Linux => "tar.gz",
+                zed::Os::Windows => "zip",
+            }
         );
 
         let asset = release
@@ -72,7 +60,8 @@ impl WakatimeExtension {
             .ok_or_else(|| format!("no asset found matching {:?}", asset_name))?;
 
         let version_dir = format!("wakatime-lsp-{}", release.version);
-        let binary_path: String = todo!(); // format!("{version_dir}/wakatime-lsp-server");
+        let asset_name = asset_name.split('.').next().unwrap();
+        let binary_path: String = format!("{version_dir}/{asset_name}/wakatime-lsp");
 
         if !fs::metadata(&binary_path).map_or(false, |stat| stat.is_file()) {
             zed::set_language_server_installation_status(
@@ -83,9 +72,14 @@ impl WakatimeExtension {
             zed::download_file(
                 &asset.download_url,
                 &version_dir,
-                zed::DownloadedFileType::GzipTar,
+                match platform {
+                    zed::Os::Mac | zed::Os::Linux => zed::DownloadedFileType::GzipTar,
+                    zed::Os::Windows => zed::DownloadedFileType::Zip,
+                },
             )
             .map_err(|e| format!("failed to download file: {e}"))?;
+
+            zed::make_file_executable(&binary_path)?;
 
             let entries =
                 fs::read_dir(".").map_err(|e| format!("failed to list working directory {e}"))?;
@@ -104,7 +98,6 @@ impl WakatimeExtension {
 
 impl zed::Extension for WakatimeExtension {
     fn new() -> Self {
-        log(format!("new"));
         Self {
             cached_binary_path: None,
         }
@@ -112,34 +105,16 @@ impl zed::Extension for WakatimeExtension {
 
     fn language_server_command(
         &mut self,
-        language_server_id: &LanguageServerId,
+        language_server_id: &zed::LanguageServerId,
         worktree: &zed::Worktree,
-    ) -> Result<zed::Command> {
-        log(format!("srvcmd @ server_id: {:?}", language_server_id));
+    ) -> zed::Result<zed::Command> {
+        let wakatime_language_server_binary_path =
+            self.language_server_binary_path(language_server_id, worktree)?;
         Ok(zed::Command {
-            command: self.language_server_binary_path(language_server_id, worktree)?,
+            command: wakatime_language_server_binary_path,
             args: vec![],
-            env: vec![
-                ("SCLS_CONFIG_SUBDIRECTORY".to_owned(), "zed".to_owned()),
-                ("RUST_LOG".to_owned(), "debug".to_owned()),
-            ],
-            // env: vec![],
+            env: vec![],
         })
-    }
-
-    fn language_server_workspace_configuration(
-        &mut self,
-        server_id: &LanguageServerId,
-        worktree: &zed_extension_api::Worktree,
-    ) -> Result<Option<zed_extension_api::serde_json::Value>> {
-        log(format!("wkspconf @ server_id: {:?}", server_id));
-        Ok(None)
-        // Ok(Some(
-        //     LspSettings::for_worktree("wakatime-lsp", worktree)
-        //         .ok()
-        //         .and_then(|settings| settings.settings.clone())
-        //         .unwrap(),
-        // ))
     }
 }
 
