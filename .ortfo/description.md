@@ -6,7 +6,6 @@ tags:
     - program
     - programming
 wip: true
-private: true
 ---
 
 :: en
