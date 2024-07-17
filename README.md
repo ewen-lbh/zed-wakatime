@@ -1,4 +1,4 @@
-![](./logo.png)
+<img height="200px" src="./logo.png" />
 
 # Wakatime Client Plugin for Zed
 
