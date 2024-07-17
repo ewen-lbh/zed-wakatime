@@ -1,3 +1,5 @@
+![](./logo.png)
+
 # Wakatime Client Plugin for Zed
 
 ## Installation

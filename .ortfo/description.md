@@ -6,11 +6,15 @@ tags:
     - program
     - programming
 wip: true
+thumbnail: ../logo.png
 ---
+
+![](../logo.png)
 
 :: en
 
 # Wakatime Client Plugin for Zed
+
 
 A [Wakatime](https://wakatime.com) client plugin to track programming time stats while using the [Zed](https://zed.dev) editor.
 
