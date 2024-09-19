@@ -1,6 +1,6 @@
 ---
 
-Wakatime now has official Zed support, see [#10](https://github.com/ewen-lbh/zed-wakatime)
+Wakatime now has official Zed support, see [#10](https://github.com/ewen-lbh/zed-wakatime/issues/10)
 
 ---
 
