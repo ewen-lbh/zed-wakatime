@@ -1,3 +1,9 @@
+---
+
+Wakatime now has official Zed support, see #10
+
+---
+
 <img height="200px" src="./logo.png" />
 
 # Wakatime Client Plugin for Zed
